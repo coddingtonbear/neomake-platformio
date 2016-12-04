@@ -22,6 +22,9 @@ class Main(object):
 
         lines = subprocess.check_output([
             'pio',
+            '-f',
+            '-c',
+            'vim',
             'run',
             '-t',
             'idedata',

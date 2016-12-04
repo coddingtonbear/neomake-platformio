@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 
 import neovim
@@ -6,8 +7,14 @@ import neovim
 
 @neovim.plugin
 class Main(object):
+    ENV_VARIABLES = (
+        'CPATH',
+    )
+
     def __init__(self, nvim):
         self.nvim = nvim
+        self._original_env = {}
+        super(Main, self).__init__()
 
     def get_idestate(self, path):
         found_start = False
@@ -34,10 +41,36 @@ class Main(object):
 
         return json.loads(''.join(json_lines))
 
-    @neovim.function('SetupPlatformioEnvironment', nargs=1)
+    @neovim.function('TeardownPlatformioEnvironment')
+    def teardown_platformio_environment(self):
+        for key, value in self._original_env.items():
+            self.nvim.command(
+                'let ${key}="{value}"'.format(
+                    key=key,
+                    value=value,
+                )
+            )
+
+    @neovim.function('SetupPlatformioEnvironment')
     def setup_platformio_environment(self, args):
-        path = args[0]
+        path = os.path.dirname(args[0])
         idestate = self.get_idestate(path)
 
-        with open('/tmp/output.txt') as out:
-            out.write(json.dumps(idestate, indent=4, sort_keys=True))
+        self.teardown_platformio_environment()
+
+        self._original_env = {}
+        for variable_name in self.ENV_VARIABLES:
+            self._original_env[variable_name] = self.nvim.eval(
+                '${variable}'.format(variable=variable_name)
+            )
+
+        CPATH = []
+        for include in idestate['includes']:
+            CPATH.append('{path}'.format(path=include))
+
+        self.nvim.command(
+            'let $CPATH="{original}:{value}"'.format(
+                value=':'.join(CPATH),
+                original=self._original_env.get('CPATH', '')
+            )
+        )

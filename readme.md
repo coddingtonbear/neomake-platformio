@@ -1,6 +1,11 @@
 Neomake-Platformio
 ==================
 
+**Seeking maintainers**: If you're using this project, you're using it
+more than me and might want to consider helping out by becoming a
+maintainer.  If you are interested, please reach out by opening a
+github issue on this project.  Cheers!
+
 Easily configure neomake to recognize your PlatformIO project's include
 path.
 
